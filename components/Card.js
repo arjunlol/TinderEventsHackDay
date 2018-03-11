@@ -2,7 +2,6 @@ import React, {Component} from 'react'
 import {StyleSheet, Text, View, Image} from 'react-native'
 
 const Card = (props) => {
-  console.log(props.pic)
   return (
     <View style={styles.card}>
       <Image
