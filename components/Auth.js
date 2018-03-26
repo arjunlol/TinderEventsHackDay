@@ -12,17 +12,20 @@ import {
 } from 'react-native';
 
 import FBLoginButton from './FBLoginButton';
+import Friends from './Friends';
 import * as Keychain from 'react-native-keychain';
 import { GraphRequest, GraphRequestManager } from 'react-native-fbsdk';
 
 export default class Auth extends Component {
   state = {
     accessToken: '',
-    loadState: 'loading'
+    loadState: 'loading',
+    friends: []
   };
 
   componentWillMount() {
-    Keychain.resetGenericPassword();
+    // reset access token to test
+    // Keychain.resetGenericPassword();
     this.load();
   }
 
@@ -32,7 +35,7 @@ export default class Auth extends Component {
         {{
           loading: <Text>LOADING</Text>,
           login: <FBLoginButton saveToken={this.save.bind(this)} />,
-          success: <Text>success</Text>,
+          success: <Friends friends={this.state.friends} />,
           error: <Text>error</Text>
         }[this.state.loadState]}
       </View>
@@ -56,7 +59,7 @@ export default class Auth extends Component {
     try {
       const credentials = await Keychain.getGenericPassword();
       if (credentials) {
-        this.setState({ accessToken: credentials.password, loadState: 'success' })
+        this.setState({ accessToken: credentials.password, loadState: 'loading' }, this.getFBData)
       } else {
         this.setState({ loadState: 'login' });
       }

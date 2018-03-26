@@ -1,23 +1,15 @@
-import React from 'react';
-import { StyleSheet, Text, View, Image, TouchableHighlight } from 'react-native';
+import React, { Component } from 'react';
+import { FlatList, Text } from 'react-native';
 
-class Friends extends React.Component {
-
-
-  constructor(props) {
-    super(props);
-    this.state = {}
-  }
+export default class Friends extends Component {
 
   render() {
-    const {replace} = this.props.navigation;
     return (
-      <TouchableHighlight
-        onPress={() => replace('Tinder')}>
-        <Text> Which friend you going with? </Text>
-      </TouchableHighlight>
+      <FlatList
+        data={this.props.friends.data}
+        renderItem={({item}) => <Text>{item.name}</Text>}
+        keyExtractor={friend => friend.id}
+      />
     );
   }
 }
-
-export default Friends
