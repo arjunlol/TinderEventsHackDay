@@ -35,7 +35,7 @@ export default class Auth extends Component {
         {{
           loading: <Text>LOADING</Text>,
           login: <FBLoginButton saveToken={this.save.bind(this)} />,
-          success: <Friends friends={this.state.friends} />,
+          success: <Friends friends={this.state.friends} navigation={this.props.navigation} myId={this.state.id}/>,
           error: <Text>error</Text>
         }[this.state.loadState]}
       </View>
