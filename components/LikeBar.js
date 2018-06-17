@@ -9,7 +9,7 @@ const LikeBar = (props) => {
         <Text> NAH </Text>
       </TouchableHighlight>
       <TouchableHighlight
-        onPress={props.onPressLikeButton}>
+        onPress={() => props.onPressLikeButton(props.id)}>
         <Text> WANT TO GO! </Text>
       </TouchableHighlight>
     </View>

@@ -3,6 +3,8 @@ import { StyleSheet, Text, View, Image } from 'react-native';
 import Card from './Card';
 import LikeBar from './LikeBar';
 
+const EVENTS_LIMIT = 10;
+
 class Tinder extends React.Component {
 
   constructor(props) {
@@ -15,37 +17,23 @@ class Tinder extends React.Component {
       events: [],
       loading: true,
       currentEvent: 0,
-      eventsILike: [],
-      eventsFriendsLike: [],
       matchEvent: null
     }
   }
   componentWillMount() {
-  //  events should be object fml no time to change
-
     const ws = new WebSocket("ws://localhost:3000");
     ws.onopen = (e) => {
-      console.log('Connected to server');
+      const connectViewer = {
+        type: "connectViewer",
+        payload: {
+          viewerId: this.props.navigation.state.params.myId
+        }
+      }
+      ws.send(JSON.stringify(connectViewer));
     }
 
-    const send = (iLiked) => {
-      ws.send(iLiked);
-    }
 
     ws.onmessage = (friendLiked) => {
-      console.log('this is freidns liked', friendLiked.data);
-      console.log('this what i like', this.state.eventsILike)
-      this.setState({
-        eventsFriendsLike: [...this.state.eventsFriendsLike, friendLiked.data]
-      })
-     if(this.state.eventsILike.indexOf(friendLiked.data) >= 0) {
-        this.state.events.forEach((event, index) => {
-          if (event.id === friendLiked.data) {
-            this.setState({matchEvent: index}, ()=> console.log('event match!'))
-            this.props.navigation.push('Match', {event: this.state.events[index].name})
-          }
-        })
-      }
 
     }
 
@@ -74,12 +62,13 @@ class Tinder extends React.Component {
       return (
         <View style={{flex:1}}>
           <Card
-            name={this.state.events[this.state.currentEvent].name}
-            pic={this.state.events[this.state.currentEvent].coverPicture}
-            time={this.state.events[this.state.currentEvent].startTime}
+            name={this.state.events[this.state.currentEvent].title}
+            pic={this.state.events[this.state.currentEvent].cover_photo_url}
+            time={this.state.events[this.state.currentEvent].start_time}
             description={this.state.events[this.state.currentEvent].description}
           />
           <LikeBar
+            id={this.state.events[this.state.currentEvent].source_id}
             onPressLikeButton={this.onPressLikeButton}
             onPressDislikeButton={this.onPressDislikeButton}
           />
@@ -88,50 +77,54 @@ class Tinder extends React.Component {
     }
   }
 
-  onPressLikeButton = () => {
-    const idOfEvent = this.state.events[this.state.currentEvent].id;
-    this.socket.send(idOfEvent)
-    console.log('this i like', idOfEvent)
-    console.log('thisi s what friends like', this.state.eventsFriendsLike)
-    if(this.state.eventsFriendsLike.indexOf(idOfEvent) >= 0) {
-      this.state.events.forEach((event, index) => {
-        if (event.id === idOfEvent) {
-          this.setState({matchEvent: index}, ()=> console.log('event match!'))
-          this.props.navigation.push('Match', {event: this.state.events[index].name})
-        }
-      })
+  onPressLikeButton = (eventId) => {
+    let eventLike = {
+      type: "eventLike",
+      payload: {
+        friendName: this.props.navigation.state.params.friendName,
+        friendId: this.props.navigation.state.params.friendId,
+        viewerName: this.props.navigation.state.params.myName,
+        eventId,
+      }
     }
+    console.log('likevent', eventLike);
+    this.socket.send(JSON.stringify(eventLike));
+
     this.setState({
-      currentEvent: this.state.currentEvent+1,
-      eventsILike: [...this.state.eventsILike, idOfEvent]
-    })
+      currentEvent: this.state.currentEvent+1
+    });
+    if (this.state.currentEvent % 10 === 8) {
+      this.fetchEvents(this.state.currentEvent+2);
+    }
   }
 
   onPressDislikeButton = () => {
     console.log('events lenght', this.state.events.length)
     console.log('curren', this.state.currentEvent)
-    if (this.state.events.length > this.state.currentEvent) {
-      this.setState({
-        currentEvent: this.state.currentEvent+1
-      })
-    } else {
-      this.props.navigation.push('NoEvents')
+    this.setState({
+      currentEvent: this.state.currentEvent+1
+    });
+    if (this.state.currentEvent % 10 === 8) {
+      this.fetchEvents(this.state.currentEvent+2);
     }
   }
 
-  fetchEvents = () => {
+  fetchEvents = (offset = 0) => {
     const fetchParams = {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       }};
-
-
-    fetch(`http://localhost:3000/events?lat=${this.state.latitude}&lng=${this.state.longitude}`, fetchParams)
+    console.log(offset);
+    console.log(`https://discover.universe.com/api/v2/discover_events?distance=200&latitude=${this.state.latitude}&limit=${EVENTS_LIMIT}&locale=en&longitude=${this.state.longitude}&offset=${offset}`);
+    fetch(`https://discover.universe.com/api/v2/discover_events?distance=200&latitude=${this.state.latitude}&limit=${EVENTS_LIMIT}&locale=en&longitude=${this.state.longitude}&offset=${offset}`, fetchParams)
       .then((response) => {
+        console.log('response', response);
         return response.json()
       }).then((data) => {
-        this.setState({events: data.events}, () => {this.setState({loading: false}); console.log(this.state.events)})
+        console.log('data', data);
+        console.log([...this.state.events, ...data.discover_events]);
+        this.setState({events: [...this.state.events, ...data.discover_events]}, () => {this.setState({loading: false}); console.log(this.state.events)})
       }).catch((error) => {
         this.setState({error: error.json()})
       })

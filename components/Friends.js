@@ -4,15 +4,16 @@ import FriendItem from './FriendItem';
 
 export default class Friends extends Component {
 
-  onSelect = (myId, friendId) => {
-    this.props.navigation.push('Tinder', {myId, friendId});
+  onSelect = (myId, myName, friendId, friendName) => {
+    this.props.navigation.push('Tinder', {myId, myName, friendId, friendName});
   }
 
   renderItem = ({item}) => (
     <FriendItem
       friendId={item.id}
       myId={this.props.myId}
-      name={item.name}
+      friendName={item.name}
+      myName={this.props.myName}
       onSelect={this.onSelect}
     />
   );
